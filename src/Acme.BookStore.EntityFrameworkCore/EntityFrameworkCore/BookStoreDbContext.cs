@@ -1,4 +1,5 @@
 ﻿using Acme.BookStore.Books;
+using Acme.BookStore.Authors;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
@@ -55,6 +56,7 @@ namespace Acme.BookStore.EntityFrameworkCore
         #endregion
 
         public DbSet<Book> Books { get; set; }
+        public DbSet<Author> Authors { get; set; }
 
         public BookStoreDbContext(DbContextOptions<BookStoreDbContext> options)
             : base(options)
@@ -87,6 +89,29 @@ namespace Acme.BookStore.EntityFrameworkCore
                 b.Property(x => x.Name).IsRequired().HasMaxLength(128);
             });
 
+            builder.Entity<Author>(b =>
+            {
+                b.ToTable(BookStoreConsts.DbTablePrefix + "Authors",
+                    BookStoreConsts.DbSchema);
+
+                b.ConfigureByConvention();
+
+                b.Property(x => x.Name)
+                    .IsRequired()
+                    .HasMaxLength(AuthorConsts.MaxNameLength);
+
+                b.HasIndex(x => x.Name);
+            });
+
+            builder.Entity<Book>(b =>
+            {
+                b.ToTable(BookStoreConsts.DbTablePrefix + "Books", BookStoreConsts.DbSchema);
+                b.ConfigureByConvention(); //auto configure for the base class props
+                b.Property(x => x.Name).IsRequired().HasMaxLength(128);
+
+                // ADD THE MAPPING FOR THE RELATION
+                b.HasOne<Author>().WithMany().HasForeignKey(x => x.AuthorId).IsRequired();
+            });
             //builder.Entity<YourEntity>(b =>
             //{
             //    b.ToTable(BookStoreConsts.DbTablePrefix + "YourEntities", BookStoreConsts.DbSchema);
